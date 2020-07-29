@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <script src="https://unpkg.com/jspdf@latest/dist/jspdf.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <script type="text/javascript" src="app.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
+
+        <script src="ckeditor5/build/ckeditor.js"></script>
+        <script src="ckeditor5/build/ckeditor.js.map"></script>
+
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+
+    <body>
+        <div class="container main">
+            <div class="row">
+                <div class="col-sm">
+                    <form>
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" class="form-control" id="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputFileToLoad">Picture</label>
+                            <input id="inputFileToLoad" type="file" onchange="encodeImageFileAsURL();" />
+                        </div>
+                        <fieldset class="form-group">
+                            <div class="row">
+                                <legend class="col-form-label col-sm-2 pt-0">Gender</legend>
+                                <div class="col-sm-10">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" id="male"
+                                            value="Han" checked>
+                                        <label class="form-check-label" for="male">
+                                            Male
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" id="female"
+                                            value="Hun">
+                                        <label class="form-check-label" for="female">
+                                            Female
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="text" class="form-control" id="age">
+                        </div>
+                        <div class="form-group">
+                            <label for="current_size">Current Size</label>
+                            <input type="text" class="form-control" id="current_size">
+                        </div>
+                        <div class="form-group">
+                            <label for="estimated_size">Estimated Size</label>
+                            <input type="text" class="form-control" id="estimated_size">
+                        </div>
+                        <div class="form-group">
+                            <label for="estimated_size_description">Estimated Size Description</label>
+                            <input type="text" class="form-control" id="estimated_size_description">
+                        </div>
+                        <div class="form-group">
+                            <label for="estimated_arrival">Estimated arrival</label>
+                            <input type="text" class="form-control" id="estimated_arrival">
+                        </div>
+                        <div class="form-group description">
+                            <label for="description">Description</label>
+                            <textarea class="form-control" id="description" rows="10"></textarea>
+                        </div>
+                    </form>
+                    <button type="submit" class="btn btn-primary" onclick="generatePDF();">Submit</button>
+                </div>
+                <div class="col-sm">
+                    <iframe id="pdf_preview" type="application/pdf" src=""></iframe>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            var description_editor;
+            var age_editor;
+            var current_size_editor;
+            var estimated_size_editor;
+
+            var $ref=$('#description');
+
+            ClassicEditor
+                .create( document.querySelector( '#description' ), {
+                    fontFamily: {
+                        options: [
+                            'default',
+                            'Ubuntu, Arial, sans-serif',
+                            'Ubuntu Mono, Courier New, Courier, monospace'
+                        ]
+                    },
+                    fontSize: {
+                        options: [
+                            9,
+                            11,
+                            13,
+                            17,
+                            19,
+                            21,
+                            23,
+                            25,
+                            27,
+                            'default',
+                        ]
+                    },
+                    toolbar: [ 'bold', 'italic', 'fontFamily', 'fontSize', '|', 'undo', 'redo'],
+                    minHeight: '300px'
+                } )
+                .then( editor => {
+                        console.log( editor );
+                        //$('<style type="text/css" scoped>.ck-editor .ck-editor__editable_inline {min-height: 300px !important;}</style>').insertAfter($ref);
+                        description_editor = editor;
+                } )
+                .catch( error => {
+                        console.error( error );
+                } );
+        </script>
+
+        <script type='text/javascript'>
+
+            var srcData;
+
+            (function (API) {
+                API.centeredText = function (txt, options, x, y) {
+                    options = options || {};
+                    /* Use the options align property to specify desired text alignment
+                    * Param x will be ignored if desired text alignment is 'center'.
+                    * Usage of options can easily extend the function to apply different text 
+                    * styles and sizes 
+                    */
+                    if (options.align == "center") {
+                        // Get current font size
+                        var fontSize = this.internal.getFontSize();
+
+                        // Get page width
+                        var pageWidth = this.internal.pageSize.width;
+
+                        // Get the actual text's width
+                        /* You multiply the unit width of your string by your font size and divide
+                        * by the internal scale factor. The division is necessary
+                        * for the case where you use units other than 'pt' in the constructor
+                        * of jsPDF.
+                        */
+                        txtWidth = this.getStringUnitWidth(txt) * fontSize / this.internal.scaleFactor;
+
+                        // Calculate text's x coordinate
+                        x = (pageWidth - txtWidth) / 2;
+                    }
+
+                    // Draw text at x,y
+                    this.text(txt, x, y);
+                }
+            })(jsPDF.API);
+
+            function encodeImageFileAsURL() {
+
+                var filesSelected = document.getElementById("inputFileToLoad").files;
+                if (filesSelected.length > 0) {
+                    var fileToLoad = filesSelected[0];
+
+                    var fileReader = new FileReader();
+
+                    fileReader.onload = function (fileLoadedEvent) {
+                        srcData = fileLoadedEvent.target.result; // <--- data: base64
+
+                        console.log("Converted Base64 version is " + srcData);
+                    }
+                    fileReader.readAsDataURL(fileToLoad);
+                }
+            }
+
+            function generatePDF() {
+                var title = "Til adoption –ankomst til Danmark " + document.getElementById("estimated_arrival").value;
+                var name = document.getElementById("name").value;
+                //var name = name_editor.getData();
+                var age = document.getElementById("age").value;
+                //var age = age_editor.getData();
+                var current_size = document.getElementById("current_size").value;
+                //var current_size = current_size_editor.getData();
+                var estimated_size = document.getElementById("estimated_size").value;
+                var estimated_size_description = document.getElementById("estimated_size_description").value;
+                //var estimated_size = estimated_size_editor.getData();
+                //var description = description_editor.getData();
+                var description = description_editor.getData();
+
+                console.log(description);
+
+                var gender
+                var gender_selector = document.getElementsByName("gender");
+
+                gender_selector.forEach(element => {
+                    if(element.checked == true){
+                        gender = element.value
+                    }
+                })
+
+                var doc = new jsPDF()
+
+                doc.addImage(border, 0, 0, 210, 297)
+
+                doc.setFont('courier')
+                doc.setFontType('bold')
+
+                doc.setFontSize(14)
+                doc.centeredText(title, { align: "center" }, 0, 45);
+
+                //Dog Image
+                doc.setLineWidth(2)
+                doc.rect(37, 65, 45, 77)
+                doc.addImage(srcData, 39, 67, 41, 73)
+
+                doc.setFontSize(30)
+                doc.text(95, 72, name);
+
+                doc.setFontSize(18)
+                doc.setFontType('normal')
+
+                //doc.text(95, 97, "Født/Alder: " + age);
+                //doc.text(95, 107, "Størelse nu: " + current_size);
+                //doc.text(95, 117, "Forventet Størelse: " + estimated_size);
+                
+                var description_lines = doc.splitTextToSize(description, 230);
+
+                specialElementHandlers = {
+                    // element with id of "bypass" - jQuery style selector
+                    '#bypassme': function (element, renderer) {
+                        // true = "handled elsewhere, bypass text extraction"
+                        return true
+                    }
+                };
+
+                margins = {
+                    top: 147,
+                    bottom: 60,
+                    left: 37,
+                    width: 140
+                };
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;">' + description + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                margins.top, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                margins = {
+                    top: 147,
+                    bottom: 60,
+                    left: 95,
+                    width: 140
+                };
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;"><strong>Køn: </strong> ' + gender + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                80, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;"><strong>Født/alder: </strong> ' + age + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                90, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;"><strong>Størrelse nu: </strong>' + current_size + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                100, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                console.log("<span><p><strong>Forventet størrelse: </strong></p>" + estimated_size + "</span>")
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;"><strong>Forventet størrelse: </strong>' + estimated_size + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                110, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                doc.fromHTML(
+                '<span style="font-size: 20px;">' + '- ' + estimated_size_description + '</span>', // HTML string or DOM elem ref.
+                margins.left, // x coord
+                115, { // y coord
+                    'width': margins.width, // max width of content on PDF
+                    'elementHandlers': specialElementHandlers
+                })
+
+                //doc.save('a4.pdf')
+                preview = doc.output('datauristring')
+                document.getElementById("pdf_preview").src = preview
+            }
+        </script>
+    </body>
+
+</html>
